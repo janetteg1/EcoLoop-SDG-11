@@ -2,6 +2,7 @@ package com.example.a211390_ganthaithie_nelson_lab1
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -82,6 +83,22 @@ data class MarketplaceItem(
     val description: String
 )
 
+// Shared Mock Data
+val allRides = listOf(
+    RideListing("Kolej Ibu Zain", "FTSM", "10:00 AM", "30", "3", "RM 3", "0112233445"),
+    RideListing("Pusanika", "FTSM", "1:30 PM", "10", "2", "RM 5", "0123456789"),
+    RideListing("Pusanika", "MRT Kajang", "2:30 PM", "15", "1", "RM 10", "0119988776"),
+    RideListing("KKM", "Bangi Gateway", "5:00 PM", "45", "2", "RM 8", "0193344556")
+)
+
+val allItems = listOf(
+    MarketplaceItem("Table Lamp", "RM 15", "Used", "KPZ", "Perfect for late night studying."),
+    MarketplaceItem("Electric Kettle", "RM 30", "Used", "KPZ", "Working perfectly, moving out soon."),
+    MarketplaceItem("Study Lamp", "RM 15", "Like New", "KIY", "Very bright LED lamp."),
+    MarketplaceItem("Small Fan", "RM 30", "Like New", "KIY", "Silent and powerful."),
+    MarketplaceItem("Bedding Set", "RM 50", "New", "KKM", "Single size, 100% cotton.")
+)
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -104,6 +121,19 @@ fun EcoLoopApp() {
     var nameInput by remember { mutableStateOf("") }
     var displayedName by remember { mutableStateOf("") }
 
+    // State variables for global search queries
+    var rideSearchQuery by remember { mutableStateOf("") }
+    var itemSearchQuery by remember { mutableStateOf("") }
+
+    // Handle Back Navigation (Swipe back or system back button)
+    BackHandler(enabled = currentScreen != "home") {
+        if (currentScreen == "detail" || currentScreen == "post_listing") {
+            currentScreen = previousScreen
+        } else {
+            currentScreen = "home"
+        }
+    }
+
     when (currentScreen) {
         "home" -> HomeScreen(
             onNavigate = { 
@@ -118,7 +148,11 @@ fun EcoLoopApp() {
             userName = displayedName,
             nameInputValue = nameInput,
             onNameInputChange = { nameInput = it },
-            onLoginClick = { displayedName = nameInput }
+            onLoginClick = { displayedName = nameInput },
+            rideSearchValue = rideSearchQuery,
+            onRideSearchChange = { rideSearchQuery = it },
+            itemSearchValue = itemSearchQuery,
+            onItemSearchChange = { itemSearchQuery = it }
         )
         "carpool" -> CarpoolScreen(
             onBack = { currentScreen = "home" },
@@ -130,7 +164,8 @@ fun EcoLoopApp() {
                 selectedItem = ride
                 previousScreen = "carpool"
                 currentScreen = "detail"
-            }
+            },
+            searchQuery = rideSearchQuery
         )
         "marketplace" -> MarketplaceScreen(
             onBack = { currentScreen = "home" },
@@ -142,7 +177,8 @@ fun EcoLoopApp() {
                 selectedItem = item
                 previousScreen = "marketplace"
                 currentScreen = "detail"
-            }
+            },
+            searchQuery = itemSearchQuery
         )
         "post_listing" -> PostListingScreen(
             onBack = { currentScreen = previousScreen },
@@ -163,22 +199,13 @@ fun HomeScreen(
     userName: String,
     nameInputValue: String,
     onNameInputChange: (String) -> Unit,
-    onLoginClick: () -> Unit
+    onLoginClick: () -> Unit,
+    rideSearchValue: String,
+    onRideSearchChange: (String) -> Unit,
+    itemSearchValue: String,
+    onItemSearchChange: (String) -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    
-    // State for searching across the entire tab content
-    var rideSearchQuery by remember { mutableStateOf("") }
-    var itemSearchQuery by remember { mutableStateOf("") }
-
-    val recentRides = listOf(
-        RideListing("Pusanika", "FTSM", "1:30 PM", "10", "2", "RM 5", "0123456789")
-    )
-    
-    val recentItems = listOf(
-        MarketplaceItem("Electric Kettle", "RM 30", "Used", "KPZ", "Working perfectly, moving out soon."),
-        MarketplaceItem("Study Lamp", "RM 15", "Like New", "KIY", "Very bright LED lamp.")
-    )
 
     Scaffold(
         topBar = {
@@ -264,10 +291,9 @@ fun HomeScreen(
                 when (selectedTab) {
                     0 -> {
                         // My Rides Tab
-                        // Requirement: Search bar at the top of the tab
                         OutlinedTextField(
-                            value = rideSearchQuery,
-                            onValueChange = { rideSearchQuery = it },
+                            value = rideSearchValue,
+                            onValueChange = onRideSearchChange,
                             modifier = Modifier.fillMaxWidth(),
                             placeholder = { Text("Search My Rides (Location or Price)...") },
                             leadingIcon = { Icon(Icons.Default.Search, null) },
@@ -277,13 +303,12 @@ fun HomeScreen(
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        // Requirement: Searching within the page content
-                        val matchesRidesSearch = "Booked Rides".contains(rideSearchQuery, ignoreCase = true) || 
-                                               "No booked rides yet.".contains(rideSearchQuery, ignoreCase = true) ||
-                                               "BOOK A RIDE".contains(rideSearchQuery, ignoreCase = true) ||
-                                               "POST A RIDE".contains(rideSearchQuery, ignoreCase = true)
+                        val matchesRidesSearch = "Booked Rides".contains(rideSearchValue, ignoreCase = true) || 
+                                               "No booked rides yet.".contains(rideSearchValue, ignoreCase = true) ||
+                                               "BOOK A RIDE".contains(rideSearchValue, ignoreCase = true) ||
+                                               "POST A RIDE".contains(rideSearchValue, ignoreCase = true)
 
-                        if (matchesRidesSearch || rideSearchQuery.isEmpty()) {
+                        if (matchesRidesSearch || rideSearchValue.isEmpty()) {
                             Text(
                                 text = "Booked Rides",
                                 style = MaterialTheme.typography.titleLarge,
@@ -319,7 +344,8 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            val filteredRides = recentRides.filter { it.from.contains(rideSearchQuery, ignoreCase = true) || it.to.contains(rideSearchQuery, ignoreCase = true) || it.price.contains(rideSearchQuery, ignoreCase = true) }
+                            // Using allRides to ensure consistency with CarpoolScreen
+                            val filteredRides = allRides.filter { it.from.contains(rideSearchValue, ignoreCase = true) || it.to.contains(rideSearchValue, ignoreCase = true) || it.price.contains(rideSearchValue, ignoreCase = true) }
                             items(filteredRides) { ride ->
                                 ProductItemRow("Ride to ${ride.to}", ride.price, ride.from, onClick = {
                                     onSelectItem(ride)
@@ -329,10 +355,9 @@ fun HomeScreen(
                     }
                     1 -> {
                         // My Items Tab
-                        // Requirement: Search bar at the top of the tab
                         OutlinedTextField(
-                            value = itemSearchQuery,
-                            onValueChange = { itemSearchQuery = it },
+                            value = itemSearchValue,
+                            onValueChange = onItemSearchChange,
                             modifier = Modifier.fillMaxWidth(),
                             placeholder = { Text("Search My Items (Name or Location)...") },
                             leadingIcon = { Icon(Icons.Default.Search, null) },
@@ -342,13 +367,12 @@ fun HomeScreen(
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        // Requirement: Searching within the page content
-                        val matchesItemsSearch = "Purchased Items".contains(itemSearchQuery, ignoreCase = true) || 
-                                               "No purchased items yet.".contains(itemSearchQuery, ignoreCase = true) ||
-                                               "PURCHASE AN ITEM".contains(itemSearchQuery, ignoreCase = true) ||
-                                               "SELL AN ITEM".contains(itemSearchQuery, ignoreCase = true)
+                        val matchesItemsSearch = "Purchased Items".contains(itemSearchValue, ignoreCase = true) || 
+                                               "No purchased items yet.".contains(itemSearchValue, ignoreCase = true) ||
+                                               "PURCHASE AN ITEM".contains(itemSearchValue, ignoreCase = true) ||
+                                               "SELL AN ITEM".contains(itemSearchValue, ignoreCase = true)
 
-                        if (matchesItemsSearch || itemSearchQuery.isEmpty()) {
+                        if (matchesItemsSearch || itemSearchValue.isEmpty()) {
                             Text(
                                 text = "Purchased Items",
                                 style = MaterialTheme.typography.titleLarge,
@@ -384,7 +408,8 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            val filteredItems = recentItems.filter { it.name.contains(itemSearchQuery, ignoreCase = true) || it.location.contains(itemSearchQuery, ignoreCase = true) }
+                            // Using allItems to ensure consistency with MarketplaceScreen
+                            val filteredItems = allItems.filter { it.name.contains(itemSearchValue, ignoreCase = true) || it.location.contains(itemSearchValue, ignoreCase = true) }
                             items(filteredItems) { item ->
                                 ProductItemRow(item.name, item.price, item.location, onClick = {
                                     onSelectItem(item)
@@ -521,7 +546,12 @@ fun MainActionCard(title: String, icon: ImageVector, modifier: Modifier = Modifi
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CarpoolScreen(onBack: () -> Unit, onPostRide: () -> Unit, onSelectRide: (RideListing) -> Unit) {
+fun CarpoolScreen(
+    onBack: () -> Unit, 
+    onPostRide: () -> Unit, 
+    onSelectRide: (RideListing) -> Unit,
+    searchQuery: String = ""
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -540,11 +570,11 @@ fun CarpoolScreen(onBack: () -> Unit, onPostRide: () -> Unit, onSelectRide: (Rid
             }
         }
     ) { padding ->
-        val rides = listOf(
-            RideListing("Kolej Ibu Zain", "FTSM", "10:00 AM", "30", "3", "RM 3", "0112233445"),
-            RideListing("Pusanika", "MRT Kajang", "2:30 PM", "15", "1", "RM 10", "0119988776"),
-            RideListing("KKM", "Bangi Gateway", "5:00 PM", "45", "2", "RM 8", "0193344556")
-        )
+        // Using the shared allRides list
+        val filteredRides = if (searchQuery.isEmpty()) allRides else allRides.filter {
+            it.from.contains(searchQuery, ignoreCase = true) || it.to.contains(searchQuery, ignoreCase = true)
+        }
+
         LazyColumn(
             modifier = Modifier
                 .padding(padding)
@@ -552,7 +582,7 @@ fun CarpoolScreen(onBack: () -> Unit, onPostRide: () -> Unit, onSelectRide: (Rid
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(rides) { ride ->
+            items(filteredRides) { ride ->
                 RideCard(ride, onClick = { onSelectRide(ride) })
             }
         }
@@ -636,7 +666,12 @@ fun RideCard(ride: RideListing, onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MarketplaceScreen(onBack: () -> Unit, onPostItem: () -> Unit, onSelectItem: (MarketplaceItem) -> Unit) {
+fun MarketplaceScreen(
+    onBack: () -> Unit, 
+    onPostItem: () -> Unit, 
+    onSelectItem: (MarketplaceItem) -> Unit,
+    searchQuery: String = ""
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -655,11 +690,11 @@ fun MarketplaceScreen(onBack: () -> Unit, onPostItem: () -> Unit, onSelectItem: 
             }
         }
     ) { padding ->
-        val itemsList = listOf(
-            MarketplaceItem("Table Lamp", "RM 15", "Used", "KPZ", "Perfect for late night studying."),
-            MarketplaceItem("Small Fan", "RM 30", "Like New", "KIY", "Silent and powerful."),
-            MarketplaceItem("Bedding Set", "RM 50", "New", "KKM", "Single size, 100% cotton.")
-        )
+        // Using the shared allItems list
+        val filteredItems = if (searchQuery.isEmpty()) allItems else allItems.filter {
+            it.name.contains(searchQuery, ignoreCase = true) || it.location.contains(searchQuery, ignoreCase = true)
+        }
+
         LazyColumn(
             modifier = Modifier
                 .padding(padding)
@@ -667,7 +702,7 @@ fun MarketplaceScreen(onBack: () -> Unit, onPostItem: () -> Unit, onSelectItem: 
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(itemsList) { item ->
+            items(filteredItems) { item ->
                 ItemCard(item, onClick = { onSelectItem(item) })
             }
         }
@@ -753,9 +788,9 @@ fun PostListingScreen(onBack: () -> Unit, onSubmit: () -> Unit) {
             OutlinedTextField(value = "", onValueChange = {}, label = { Text("To") }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(value = "", onValueChange = {}, label = { Text("Expired in (minutes)") }, modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
             OutlinedTextField(value = "", onValueChange = {}, label = { Text("Price") }, modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
             OutlinedTextField(value = "", onValueChange = {}, label = { Text("Seats Available") }, modifier = Modifier.fillMaxWidth())
             
             Spacer(Modifier.weight(1f))
