@@ -8,7 +8,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.a211390_ganthaithie_nelson_lab3"
+        applicationId = "com.example.a211390_ganthaithie_nelson_lab4"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -18,6 +18,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
+
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -38,12 +43,14 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation("androidx.navigation:navigation-compose:2.8.0")
     implementation(libs.androidx.compose.material.icons.extended)
     implementation("androidx.compose.ui:ui-text-google-fonts:1.7.6")
     testImplementation(libs.junit)
