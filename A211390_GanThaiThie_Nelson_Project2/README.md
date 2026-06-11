@@ -1,4 +1,4 @@
-# A211390 Gan Thai Thie_Nelson Lab1
+# A211390 Gan Thai Thie_Nelson Project 2
 
 An Android app built with Kotlin, Jetpack Compose, and Material 3 for the A211390 Gan Thai Thie_Nelson Lab1 project. The app includes campus-focused features such as home, carpool, marketplace, profile, posting flows, navigation, Firebase integration, and local data storage.
 
